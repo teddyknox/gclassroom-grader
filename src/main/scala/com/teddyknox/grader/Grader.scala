@@ -1,66 +1,48 @@
 package com.teddyknox.grader
 
-import scala.collection.JavaConverters._
+import java.io.File
 
-object Grader {
-  lazy val service = Auth.getClassroomService
-
-  def main(args: Array[String]): Unit = {
-    checkNonEmpty(args)
-    args.head match {
-      case "courses" => courses(args.tail)
-      case "assignments" => assignments(args.tail)
-      case "help" => printHelp()
-      case default =>
-        println(s"Unrecognized command '${args.head}'. Printing usage...\n")
-        printHelp()
-        System.exit(1)
-    }
-  }
-
-  def courses(args: Seq[String]): Unit = {
-    checkNonEmpty(args)
-    args.head match {
-      case "list" => listCourses()
-      case "help" => printCoursesHelp()
-      case default =>
-        println(s"Unrecognized command 'grader courses ${args.head}'. Printing usage...\n")
-        printCoursesHelp()
-        System.exit(1)
-    }
-  }
-
-  def assignments(args:Seq[String]): Unit = {
-    checkNonEmpty(args)
-    println("USAGE: grader assignments (list)")
-  }
-
-  def listCourses(): Unit = {
-    val courses = service.courses().list()
-      .setPageSize(10)
-      .execute()
-    println("ID\t\t\tName")
-    courses
-      .getCourses.asScala
-      .foreach { c =>
-        println(s"${c.getId}\t\t${c.getName}")
-      }
-  }
-
+trait Base {
   def checkNonEmpty(remainingArgs: Seq[String]): Unit = {
-    if(remainingArgs.length == 0) {
+    if(remainingArgs.isEmpty) {
       printHelp()
       System.exit(1)
     }
   }
 
-  def printHelp(): Unit = println("""
-      |USAGE: grader (courses|assignments)
-      |
-    """.stripMargin)
+  def printHelp(): Unit
+}
 
-  def printCoursesHelp(): Unit = println("""
-      |USAGE: grader courses (list)
-      |
-    """.stripMargin)
+object Grader extends Base {
+  lazy val service = Auth.getClassroomService
+
+  def main(args: Array[String]): Unit = {
+//    try {
+    run(args.toList)
+//    } catch {
+//      case e: Exception =>
+//        println(s"Error: ${e.getMessage}. Exiting.")
+//        System.exit(1)
+//    }
+  }
+
+  def run(args: Seq[String]): Unit = {
+    args.head match {
+      case "courses" => Courses(service).run(args.tail)
+      case "assignments" => Assignments(service).run(args.tail)
+      case "submissions" => Submissions(service).run(args.tail)
+      case "help" => printHelp()
+      case default =>
+        println(s"Unrecognized command.\n")
+        printHelp()
+        System.exit(1)
+    }
+  }
+
+  def init(): Unit = {
+    val fileTree = new File("./assignments")
+    fileTree.mkdir()
+  }
+
+  def printHelp(): Unit = println("USAGE: grader (init|courses|assignments|submissions)")
 }

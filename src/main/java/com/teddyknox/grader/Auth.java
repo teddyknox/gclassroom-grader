@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class Auth {
     /** Application name. */
@@ -26,7 +27,7 @@ public class Auth {
 
     /** Directory to store user credentials for this application. */
     private static final java.io.File DATA_STORE_DIR = new java.io.File(
-        System.getProperty("user.home"), ".credentials/classroom.googleapis.com-java-quickstart");
+        System.getProperty("user.home"), ".credentials/com.teddyknox.grader");
 
     /** Global instance of the {@link FileDataStoreFactory}. */
     private static FileDataStoreFactory DATA_STORE_FACTORY;
@@ -43,8 +44,8 @@ public class Auth {
      * If modifying these scopes, delete your previously saved credentials
      * at ~/.credentials/classroom.googleapis.com-java-quickstart
      */
-    private static final List<String> SCOPES =
-        Arrays.asList(ClassroomScopes.CLASSROOM_COURSES_READONLY);
+    private static final Set<String> SCOPES = ClassroomScopes.all();
+
 
     static {
         try {
@@ -77,8 +78,8 @@ public class Auth {
                 .build();
         Credential credential = new AuthorizationCodeInstalledApp(
             flow, new LocalServerReceiver()).authorize("user");
-//        System.out.println(
-//                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
+        System.out.println(
+                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
         return credential;
     }
 
