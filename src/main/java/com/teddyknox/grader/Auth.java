@@ -12,18 +12,21 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.classroom.ClassroomScopes;
 import com.google.api.services.classroom.model.*;
+import com.google.api.services.drive.DriveScopes;
+import com.google.common.collect.ImmutableSet;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class Auth {
     /** Application name. */
     private static final String APPLICATION_NAME =
-        "Classroom API Java Quickstart";
+        "Google Classroom Java Grader";
 
     /** Directory to store user credentials for this application. */
     private static final java.io.File DATA_STORE_DIR = new java.io.File(
@@ -44,8 +47,10 @@ public class Auth {
      * If modifying these scopes, delete your previously saved credentials
      * at ~/.credentials/classroom.googleapis.com-java-quickstart
      */
-    private static final Set<String> SCOPES = ClassroomScopes.all();
-
+    private static final Set<String> SCOPES = new ImmutableSet.Builder<String>()
+            .addAll(ClassroomScopes.all())
+            .addAll(DriveScopes.all())
+            .build();
 
     static {
         try {
@@ -62,12 +67,10 @@ public class Auth {
      * @return an authorized Credential object.
      * @throws IOException
      */
-    public static Credential authorize() throws IOException {
+    private static Credential authorize() throws IOException {
         // Load client secrets.
-        InputStream in =
-            Auth.class.getResourceAsStream("/client_secret.json");
-        GoogleClientSecrets clientSecrets =
-            GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+        InputStream in = Auth.class.getResourceAsStream("/client_secret.json");
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow =
@@ -78,8 +81,15 @@ public class Auth {
                 .build();
         Credential credential = new AuthorizationCodeInstalledApp(
             flow, new LocalServerReceiver()).authorize("user");
-        System.out.println(
-                "Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
+        System.out.println("Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
+        return credential;
+    }
+
+    private static Credential credential;
+    private static Credential getCredential() throws IOException {
+        if (credential == null) {
+            credential = authorize();
+        }
         return credential;
     }
 
@@ -89,9 +99,20 @@ public class Auth {
      * @throws IOException
      */
     public static com.google.api.services.classroom.Classroom getClassroomService() throws IOException {
-        Credential credential = authorize();
         return new com.google.api.services.classroom.Classroom.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, credential)
+                HTTP_TRANSPORT, JSON_FACTORY, getCredential())
+                .setApplicationName(APPLICATION_NAME)
+                .build();
+    }
+
+    /**
+     * Build and return an authorized Drive client service.
+     * @return an authorized Classroom client service
+     * @throws IOException
+     */
+    public static com.google.api.services.drive.Drive getDriveService() throws IOException {
+        return new com.google.api.services.drive.Drive.Builder(
+                HTTP_TRANSPORT, JSON_FACTORY, getCredential())
                 .setApplicationName(APPLICATION_NAME)
                 .build();
     }
