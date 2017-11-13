@@ -1,25 +1,16 @@
 package com.teddyknox.grader
 
-import java.io.File
-
-import com.teddyknox.grader.commands.{Assignments, Command, Courses}
+import com.google.api.services.classroom.Classroom
+import com.google.api.services.drive.Drive
 
 
 object Grader extends Command {
-  lazy implicit private val classroom = Auth.getClassroomService
-  lazy implicit private val drive = Auth.getDriveService
+  lazy implicit private val classroom: Classroom = Auth.getClassroomService
+  lazy implicit private val drive: Drive = Auth.getDriveService
 
-  def main(args: Array[String]): Unit = {
-//    try {
-      Grader(args.toList)
-//    } catch {
-//      case e: Exception =>
-//        println(s"Error: ${e.getMessage}. Exiting.")
-//        System.exit(1)
-//    }
-  }
+  def main(args: Array[String]): Unit = Grader(args.toList)
 
-  def apply(args: List[String]): Unit = {
+  def apply(args: Seq[String]): Unit = {
     args.head match {
       case "courses" => Courses(args.tail)
       case "assignments" => Assignments(args.tail)
@@ -31,5 +22,13 @@ object Grader extends Command {
     }
   }
 
-  def printHelp(): Unit = println("USAGE: grader (init|courses|assignments|submissions)")
+  def printHelp(): Unit = println(
+    """USAGE: grader <command>
+      |
+      |Possible commands:
+      |    courses
+      |    assignments
+      |    help
+      |
+    """.stripMargin)
 }

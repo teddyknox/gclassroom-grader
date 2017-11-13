@@ -1,4 +1,4 @@
-package com.teddyknox.grader.commands
+package com.teddyknox.grader
 
 import com.google.api.services.classroom.Classroom
 import com.google.api.services.classroom.model.Course
@@ -9,9 +9,14 @@ import scala.collection.mutable
 object Courses extends Command {
 
   def apply(args: Seq[String])(implicit service: Classroom): Unit = {
-    println("ID\t\t\tName\t\t\tSection")
-    getAllCourses.foreach { c =>
-      println(s"${c.getId}\t\t${c.getName}\t\t${c.getSection}")
+    listCourses()
+
+    def listCourses(): Unit = {
+      val courses = getAllCourses
+      println("ID\t\t\tName\t\t\tSection")
+      courses.foreach { c =>
+        println(s"${c.getId}\t\t${c.getName}\t\t${c.getSection}")
+      }
     }
 
     def getAllCourses: Seq[Course] = {
@@ -22,11 +27,7 @@ object Courses extends Command {
         nextPageToken = Option(result.getNextPageToken)
         courses ++= result.getCourses.asScala
       } while (nextPageToken.nonEmpty)
-      courses.toSeq
+      courses
     }
   }
-
-  def printHelp(): Unit = println("""
-    |USAGE: grader courses
-    |""".stripMargin)
 }

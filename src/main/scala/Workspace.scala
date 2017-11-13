@@ -1,6 +1,6 @@
 package com.teddyknox.grader.models
 
-import java.io.{BufferedOutputStream, File, FileOutputStream}
+import java.io.BufferedOutputStream
 import java.nio.file.{Files, Path, Paths}
 
 import com.google.api.services.classroom.Classroom
@@ -18,7 +18,7 @@ class Workspace()(implicit classroom: Classroom, drive: Drive) {
   val homeDir = Paths.get(HOME_PATH).toAbsolutePath
   setupDirectory(homeDir)
 
-  /* Returns the list of userIds with a valid coursework submission. */
+  /* Returns the list of userIds with a valid coursework (*.java) submission. */
   def download(courseId: String, courseWorkId: String): Set[String] = {
     val courseDir = homeDir.resolve(courseId)
     setupDirectory(courseDir)
@@ -68,7 +68,6 @@ class Workspace()(implicit classroom: Classroom, drive: Drive) {
     if (Files.exists(path) && !Files.isDirectory(path)) {
       Files.delete(path)
     }
-
     if (!Files.exists(path)) {
       Files.createDirectory(path)
     }

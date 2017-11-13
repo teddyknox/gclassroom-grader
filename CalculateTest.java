@@ -3,7 +3,7 @@
  * @version 5 Oct 2017
  * Purpose is to run test cases on Students' Calculate Library
  */
-public class DoMath {
+public class CalculateTest {
 
 	public static void main(String[] args) {
 

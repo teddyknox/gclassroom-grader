@@ -1,6 +1,6 @@
-package com.teddyknox.grader.commands
+package com.teddyknox.grader
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import com.google.api.services.classroom.Classroom
 import com.google.api.services.classroom.model.CourseWork
@@ -17,7 +17,7 @@ object Assignments extends Command {
       case "list" :: tail => listCourseWork(parseKeyValueArgs(tail)("course"))
       case "grade" :: tail =>
         val params = parseKeyValueArgs(tail)
-        gradeCourseWork(params("course"), params("courseWork"), params("testClass"))
+        gradeCourseWork(params("course"), params("assignment"), params("testClass"))
       case "help" :: tail => printHelp()
       case default =>
         println(s"Unrecognized command.\n")
@@ -41,30 +41,65 @@ object Assignments extends Command {
         nextPageToken = Option(result.getNextPageToken)
         assignments ++= result.getCourseWork.asScala
       } while (nextPageToken.nonEmpty)
-      assignments.toSeq
+      assignments
     }
 
     def gradeCourseWork(courseId: String, courseWorkId: String, testClassPath: String): Unit = {
       val workspace = new Workspace()
+      val courseWorkDir = workspace.homeDir
+        .resolve(courseId)
+        .resolve(courseWorkId)
+
+      // Download student code
       val userIds = workspace.download(courseId, courseWorkId)
+
+      // Build list of student grade dir paths
+      val gradeDirs = userIds.map { userId =>
+        courseWorkDir.resolve(userId)
+      }
+
+      // Symlink the test class into each grade dir path
       val target = Paths.get("").toAbsolutePath.resolve(testClassPath)
-      userIds.foreach { userId =>
-        val link = workspace.homeDir
-          .resolve(courseId)
-          .resolve(courseWorkId)
-          .resolve(userId)
-          .resolve(target.getFileName.toString)
+      gradeDirs.foreach { gradeDir =>
+        val link = gradeDir.resolve(target.getFileName.toString)
         Files.deleteIfExists(link)
         Files.createSymbolicLink(link, target)
+      }
+
+      // Compile each grade dir
+      val validGradeDirs = gradeDirs.flatMap { gradeDir =>
+        val process = new ProcessBuilder("/bin/bash", "-c", "javac *.java")
+          .directory(gradeDir.toFile)
+          .start()
+        if (process.waitFor() == 0) {
+          println(s"Compilation succeeded for $gradeDir")
+          Some(gradeDir)
+        } else {
+          println(s"Compilation failed for $gradeDir")
+          None
+        }
+      }
+
+      val validUserIds = validGradeDirs.map(_.getFileName.toString)
+      println(validUserIds)
+
+      // Run test suite for each grade dir
+      validGradeDirs.foreach { gradeDir =>
+        new ProcessBuilder("/bin/bash", "-c", "java -cp \".\" CalculateTest")
+          .directory(gradeDir.toFile)
+          .inheritIO()
+          .start()
       }
     }
   }
 
   def printHelp(): Unit = println("""
-   |USAGE: grader assignments list --course <course id>
+   |USAGE: grader assignments <command>
+   |
+   |Possible commands:
+   |    list --course <courseId>
+   |    grade --course <courseId> --assignment <assignmentId> --testClass <test class path>
+   |    help
+   |
    |""".stripMargin)
 }
-
-// compile testClass and subject class
-// run testClass and subject class, capture output
-// assemble output into CSV file
