@@ -4,3 +4,4 @@ build
 *.iws
 .gradle
 .google-classroom-grader
+.DS_Store

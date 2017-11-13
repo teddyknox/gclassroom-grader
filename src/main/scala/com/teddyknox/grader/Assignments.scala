@@ -87,7 +87,7 @@ object Assignments extends Command {
       validGradeDirs.foreach { gradeDir =>
         new ProcessBuilder("/bin/bash", "-c", "java -cp \".\" CalculateTest")
           .directory(gradeDir.toFile)
-          .inheritIO()
+//          .inheritIO()
           .start()
       }
     }
